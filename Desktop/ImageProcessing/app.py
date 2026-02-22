@@ -1,41 +1,27 @@
-import os
-from openai import OpenAI
+import google.generativeai as genai
+import PIL.Image
 
-# 1. Initialize the AI Client
-client = OpenAI() # It will automatically find your env variable key
+# 1. Setup (Replace with your free key from Google AI Studio)
+genai.configure(api_key="AIzaSyD6Fv74_6yJUK0tioUUY1DD0VS_QBZ877E")
+model = genai.GenerativeModel('gemini-1.5-flash')
 
-def process_listing(image_path, user_category):
+def validate_listing(image_path, category):
+    img = PIL.Image.open(image_path)
+    
+    prompt = f"""
+    Act as a marketplace moderator. The user says this item is in the category: '{category}'.
+    Check:
+    1. Is the image safe (no violence, offensive content, or nudity)?
+    2. Does the image match the category '{category}'?
+    
+    Response format (JSON):
+    {{ "is_safe": bool, "category_match": bool, "reason": "string" }}
     """
-    Analyzes an image for safety and category accuracy.
-    """
-    # System instructions to ensure the AI behaves like a moderator
-    instructions = f"""
-    You are an AI Moderator for a marketplace app. 
-    The user claims this is a: {user_category}.
-    Task: 
-    1. Check for offensive content (Safety).
-    2. Verify if the image matches the category (Validation).
-    Return your answer in JSON format only: 
-    {{ "safe": bool, "match": bool, "reason": "string" }}
-    """
+    
+    response = model.generate_content([prompt, img])
+    return response.text
 
-    # For the POC, we are using a vision-capable model
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": instructions},
-            {"role": "user", "content": [
-                {"type": "text", "text": "Analyze this listing image."},
-                {"type": "image_url", "image_url": {"url": image_path}} # You can also upload local files
-            ]}
-        ],
-        response_format={ "type": "json_object" }
-    )
-
-    return response.choices[0].message.content
-
-# 2. Test your POC
+# 4. Test it
 if __name__ == "__main__":
-    # Replace with a real image link for testing
-    sample_img = "https://upload.wikimedia.org/wikipedia/commons/a/af/Free_phone_on_the_wall.jpg"
-    print(process_listing(sample_img, "Electronics"))
+    # You can use a local path like 'test_image.jpg' or a PIL object
+    print(validate_listing("car_photo.jpg", "Electronics"))
