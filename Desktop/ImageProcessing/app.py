@@ -5,7 +5,11 @@ import PIL.Image
 
 # 1. Setup the Client
 # Ensure you have set your API key in your terminal: set GEMINI_API_KEY=your_key
-client = genai.Client(api_key=os.environ.get("AIzaSyD6Fv74_6yJUK0tioUUY1DD0VS_QBZ877E"))
+# CHANGE THIS:
+# client = genai.Client(api_key=os.environ.get("AIzaSyD..."))
+
+# TO THIS:
+client = genai.Client(api_key="AIzaSyD6Fv74_6yJUK0tioUUY1DD0VS_QBZ877E")
 
 def validate_listing(image_path, category):
     # Open the image file
