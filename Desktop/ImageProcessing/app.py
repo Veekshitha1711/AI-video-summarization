@@ -26,8 +26,12 @@ def validate_listing(image_path, category):
     """
     
     # Using the latest Gemini 3 Flash model
+    # Change this:
+# response = client.models.generate_content(model="gemini-3-flash", ...)
+
+# To this:
     response = client.models.generate_content(
-        model="gemini-3-flash",
+        model="gemini-3-flash-preview", 
         contents=[prompt, img],
         config=types.GenerateContentConfig(
             response_mime_type="application/json"
