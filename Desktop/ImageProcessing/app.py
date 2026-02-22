@@ -1,48 +1,80 @@
-import os
+import streamlit as st
 from google import genai
 from google.genai import types
-import PIL.Image
+from PIL import Image
+import json
+import os
 
-# 1. Setup the Client
-# Ensure you have set your API key in your terminal: set GEMINI_API_KEY=your_key
-# CHANGE THIS:
-# client = genai.Client(api_key=os.environ.get("AIzaSyD..."))
+# --- PAGE CONFIG ---
+st.set_page_config(page_title="Marketplace Guard AI", page_icon="🛡️", layout="centered")
 
-# TO THIS:
-client = genai.Client(api_key="AIzaSyD6Fv74_6yJUK0tioUUY1DD0VS_QBZ877E")
+st.title("🛡️ Marketplace Image Guard")
+st.subheader("Automated Moderation & Category Validation")
 
-def validate_listing(image_path, category):
-    # Open the image file
-    img = PIL.Image.open(image_path)
+# --- API SETUP ---
+# Replace with your key or set it in your environment
+API_KEY = "AIzaSyD6Fv74_6yJUK0tioUUY1DD0VS_QBZ877E" 
+client = genai.Client(api_key=API_KEY)
+
+# --- APP LOGIC ---
+st.sidebar.header("Listing Details")
+category = st.sidebar.selectbox(
+    "Select Listing Category",
+    ["Electronics", "Vehicles", "Real Estate", "Fashion", "Home & Garden"]
+)
+
+uploaded_file = st.file_uploader("Upload an item image...", type=["jpg", "jpeg", "png"])
+
+if uploaded_file is not None:
+    # Display the uploaded image
+    img = Image.open(uploaded_file)
+    st.image(img, caption="Uploaded Image", use_container_width=True)
     
-    # Modern Prompt
-    prompt = f"""
-    Act as a marketplace moderator. The user is listing this item under: '{category}'.
-    
-    Please analyze the image and provide a JSON response:
-    1. 'is_safe': (boolean) False if it contains nudity, violence, or offensive content.
-    2. 'category_match': (boolean) True if the image shows an item belonging to '{category}'.
-    3. 'reason': (string) A short explanation.
-    """
-    
-    # Using the latest Gemini 3 Flash model
-    # Change this:
-# response = client.models.generate_content(model="gemini-3-flash", ...)
+    if st.button("Validate Listing"):
+        with st.spinner("AI is analyzing the listing..."):
+            try:
+                prompt = f"""
+                You are a marketplace moderator for an app like OLX.
+                The user has listed this item under: '{category}'.
+                
+                Analyze the image and return ONLY a JSON object with:
+                1. 'is_safe': boolean (false if it contains nudity, violence, or offensive content).
+                2. 'category_match': boolean (true if the item matches '{category}').
+                3. 'reason': string (short explanation).
+                """
 
-# To this:
-    response = client.models.generate_content(
-        model="gemini-3-flash-preview", 
-        contents=[prompt, img],
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json"
-        )
-    )
-    
-    return response.text
+                # Call Gemini 3 Flash
+                response = client.models.generate_content(
+                    model="gemini-3-flash-preview",
+                    contents=[prompt, img],
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json"
+                    )
+                )
 
-if __name__ == "__main__":
-    # Test with your local image
-    try:
-        print(validate_listing("car_photo.jpg", "Electronics"))
-    except Exception as e:
-        print(f"Error: {e}")
+                # Parse JSON Result
+                result = json.loads(response.text)
+
+                # --- DISPLAY RESULTS ---
+                st.divider()
+                
+                if result['is_safe'] and result['category_match']:
+                    st.success("✅ **Listing Approved!** This post is safe and matches the category.")
+                else:
+                    st.error("❌ **Listing Rejected**")
+                    
+                # Detailed breakdown
+                col1, col2 = st.columns(2)
+                col1.metric("Safety Status", "PASS" if result['is_safe'] else "FAIL")
+                col2.metric("Category Match", "MATCH" if result['category_match'] else "MISMATCH")
+                
+                st.info(f"**AI Reasoning:** {result['reason']}")
+
+            except Exception as e:
+                st.error(f"An error occurred: {e}")
+
+else:
+    st.info("Please upload an image to begin the validation process.")
+
+# Footer
+st.caption("POC powered by Gemini 3 Flash & Streamlit")
