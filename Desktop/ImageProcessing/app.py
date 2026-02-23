@@ -9,11 +9,6 @@ st.set_page_config(page_title="Universal Marketplace Guard", layout="wide")
 st.title("🛡️ Universal Listing Auditor")
 
 # --- API SETUP ---
-api_key = os.environ.get("GEMINI_API_KEY")
-
-if not api_key:
-    st.error("Missing API Key! Please set the GEMINI_API_KEY environment variable.")
-    st.stop()
 
 api_key = os.environ.get("API_KEY")
 
