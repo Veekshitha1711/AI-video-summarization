@@ -28,7 +28,7 @@ st.title("🛡️ Universal AI Marketplace Guard")
 # --- HELPER FUNCTION FOR FALLBACK LOGIC ---
 def call_gemini_with_fallback(prompt, img):
     """Tries 2.0 first, falls back to 1.5 if 2.0 is overloaded."""
-    for model_name in ["gemini-2.0-flash", "gemini-1.5-flash"]:
+    for model_name in ["gemini-2.0-flash", "gemini-1.5-flash","gemini-flash-latest"]:
         try:
             response = client.models.generate_content(
                 model=model_name,
